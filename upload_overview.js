@@ -5,7 +5,7 @@ const pool = require('./connection');
 const storage = multer.diskStorage({
     destination: async  (req, file, cb) => {
         try {
-            await pool.query( `UPDATE users SET resume = TRUE WHERE token='${req.body.path}';`);
+            await pool.query( `UPDATE users SET overview = TRUE WHERE token='${req.body.path}';`);
             if (!fs.existsSync(`/data-files/${req.body.path}/`)) fs.mkdirSync(`/data-files/${req.body.path}/`);
             cb(null, `/data-files/${req.body.path}/`);
         } catch (err) {
@@ -13,7 +13,7 @@ const storage = multer.diskStorage({
             res.status(500);
         }
     },
-    filename: (req, file, cb) => cb(null,  `resume.pdf`),
+    filename: (req, file, cb) => cb(null,  `overview.pdf`),
 });
 
 const upload = multer({ storage: storage });
