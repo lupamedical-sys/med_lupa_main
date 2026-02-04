@@ -58,7 +58,7 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
                     type_query += `'${type}',`
                 });
                 type_query = type_query.substring(0, type_query.length-1);
-                search_arr_query += ` videos.category_id && ARRAY[${type_query}] `;
+                search_arr_query += ` videos.category && ARRAY[${type_query}] `;
 
                 if(req.params.token != "guest"){
                     let selected_species = types_arr;
@@ -95,20 +95,20 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
 
         if(search.trim() != ''){
             search_query = ` AND ( users.username ILIKE '%${search.trim()}%' OR videos.description ILIKE '%${search.trim()}%' OR 
-            videos.category_id && (SELECT ARRAY[code] FROM med_categories WHERE EXISTS (SELECT 1 FROM UNNEST(titles) AS title WHERE title ILIKE '%${search.trim().toLowerCase()}%') LIMIT 1)::TEXT[] ) `;
+            videos.category && (SELECT ARRAY[code] FROM med_categories WHERE EXISTS (SELECT 1 FROM UNNEST(titles) AS title WHERE title ILIKE '%${search.trim().toLowerCase()}%') LIMIT 1)::TEXT[] ) `;
         }
 
         var data = JSON.parse('{}');
 
         if(req.params.token == "Guest"){
-            data.user = JSON.parse(`{"id": 0, "index": 0, "username": "Guest", "phone": "", "token": "", "category_id": "", "email": "", "address": "", "permission": 0, "premium": false, "resume": false}`);
+            data.user = JSON.parse(`{"id": 0, "index": 0, "username": "Guest", "phone": "", "token": "", "category": "", "email": "", "address": "", "permission": 0, "premium": false, "resume": false}`);
             data.videos = JSON.parse(`[]`);
             data.followers = JSON.parse(`[]`);
             data.followings = JSON.parse(`[]`);
             data.likes = JSON.parse(`[]`);
             data.views = JSON.parse(`[]`);
         }else{
-            await pool.query(`SELECT id, index, username, phone, token, category_id, email, address, permission, premium, resume FROM users WHERE token='${req.params.token}'`)
+            await pool.query(`SELECT id, index, username, phone, token, category, email, address, permission, premium, resume FROM users WHERE token='${req.params.token}'`)
             .then(users =>{
                 if(users.rows.length){
                     data.user = users.rows[0];
@@ -116,7 +116,7 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
                 }
             });
 
-            await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.resume, users.category_id, videos.name, users.token, videos.description, videos.publish_date, videos.country, videos.category_id, videos.is_active, videos.confirm,
+            await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.resume, users.category, videos.name, users.token, videos.description, videos.publish_date, videos.country, videos.category, videos.is_active, videos.confirm,
                 (SELECT COUNT(id) FROM likes WHERE video_id = videos.id )::int as likes, 
                 (SELECT COUNT(id) FROM views WHERE video_id = videos.id )::int as views, 
                 (SELECT COUNT(*) FROM likes WHERE video_id = videos.id) + 
@@ -127,7 +127,7 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
                 data.videos = videos.rows;
             });
 
-            await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.resume, users.category_id, videos.name, users.token, videos.country, videos.category_id, 
+            await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.resume, users.category, videos.name, users.token, videos.country, videos.category, 
             (SELECT COUNT(id) FROM likes WHERE video_id = videos.id )::int as likes, 
             (SELECT COUNT(id) FROM views WHERE video_id = videos.id )::int as views, 
             (SELECT COUNT(*) FROM likes WHERE video_id = videos.id) + 
@@ -141,14 +141,14 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
                 data.followers = follower_videos.rows;
             });
 
-            await pool.query(`SELECT 0 as id, 0 as index, 0 as likes, 0 as views, id as user_id, username, phone, email, address, resume, category_id, token, '{}'::TEXT[] as countries, '{}'::TEXT[] as types FROM users 
+            await pool.query(`SELECT 0 as id, 0 as index, 0 as likes, 0 as views, id as user_id, username, phone, email, address, resume, category, token, '{}'::TEXT[] as countries, '{}'::TEXT[] as types FROM users 
             WHERE users.id = ANY(SELECT follows.follower_id as id FROM follows INNER JOIN users ON follows.user_id = users.id WHERE users.token ='${req.params.token}') 
             AND (SELECT COUNT(*) FROM videos WHERE user_id = users.id)::int = 0`)
             .then(follower_users =>{
                 data.followers = data.followers.concat(follower_users.rows);
             });
 
-            await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.resume, users.category_id, videos.name, users.token, videos.country, videos.category_id, 
+            await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.resume, users.category, videos.name, users.token, videos.country, videos.category, 
                 (SELECT COUNT(id) FROM likes WHERE video_id = videos.id )::int as likes, 
                 (SELECT COUNT(id) FROM views WHERE video_id = videos.id )::int as views, 
                 (SELECT COUNT(*) FROM likes WHERE video_id = videos.id) + 
@@ -162,7 +162,7 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
                 data.followings = followings_videos.rows;
             });
             
-            await pool.query(`SELECT 0 as id, 0 as index, 0 as likes, 0 as views, id as user_id,  id as user_id, username, phone, email, address, resume, category_id, token, '{}'::TEXT[] as countries, '{}'::TEXT[] as types FROM users 
+            await pool.query(`SELECT 0 as id, 0 as index, 0 as likes, 0 as views, id as user_id,  id as user_id, username, phone, email, address, resume, category, token, '{}'::TEXT[] as countries, '{}'::TEXT[] as types FROM users 
             WHERE users.id = ANY(SELECT follows.user_id as id FROM follows INNER JOIN users ON follows.follower_id = users.id WHERE users.token ='${req.params.token}') 
             AND (SELECT COUNT(*) FROM videos WHERE user_id = users.id)::int = 0`)
             .then(following_users =>{
@@ -196,7 +196,7 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
             data.countries = countries.rows;
         });
 
-        await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.resume, users.category_id, videos.name, users.token, videos.description, videos.publish_date, videos.country, videos.category_id, 
+        await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.resume, users.category, videos.name, users.token, videos.description, videos.publish_date, videos.country, videos.category, 
             (SELECT COUNT(id) FROM likes WHERE video_id = videos.id )::int as likes, 
             (SELECT COUNT(id) FROM views WHERE video_id = videos.id )::int as views, 
             (SELECT COUNT(*) FROM likes WHERE video_id = videos.id) + 
@@ -211,7 +211,7 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
             data.med_staff = med_staff.rows;
         });
 
-        await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.resume, users.category_id, videos.name, users.token, videos.description, videos.publish_date, videos.country, videos.category_id, 
+        await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.resume, users.category, videos.name, users.token, videos.description, videos.publish_date, videos.country, videos.category, 
             (SELECT COUNT(id) FROM likes WHERE video_id = videos.id )::int as likes, 
             (SELECT COUNT(id) FROM views WHERE video_id = videos.id )::int as views, 
             (SELECT COUNT(*) FROM likes WHERE video_id = videos.id) + 
@@ -243,12 +243,12 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
 app.post('/add-user', async(req, res) => {
     try {
         // let sendMessage = false;
-        const check = await pool.query(`SELECT index, username, password, category_id, email, address, confirm FROM users WHERE phone = '${req.body.phone}'`);
+        const check = await pool.query(`SELECT index, username, password, category, email, address, confirm FROM users WHERE phone = '${req.body.phone}'`);
         if (!check.rows.length) {
             res.json({"name": "successful", "code": "0"});
             await pool.query(
-                `INSERT INTO users (index, username, phone, token, password, email, address, category_id, permission) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`,
-                [req.body.index, req.body.user, req.body.phone, req.body.token, generateMd5(`SET_USER_DATA_${req.body.password}`), req.body.email, req.body.address, req.body.category_id, parseInt(req.body.index) == 1 ? 3 : 1]
+                `INSERT INTO users (index, username, phone, token, password, email, address, category, permission) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`,
+                [req.body.index, req.body.user, req.body.phone, req.body.token, generateMd5(`SET_USER_DATA_${req.body.password}`), req.body.email, req.body.address, req.body.category, parseInt(req.body.index) == 1 ? 3 : 1]
             );
             sendMessage = true;
         } else {
@@ -256,7 +256,7 @@ app.post('/add-user', async(req, res) => {
                 check.rows[0].index == parseInt(req.body.index)
                 && check.rows[0].username == req.body.user
                 && check.rows[0].password == generateMd5(`SET_USER_DATA_${req.body.password}`)
-                && check.rows[0].category_id == req.body.category_id 
+                && check.rows[0].category == req.body.category 
                 && check.rows[0].email == req.body.email 
                 && check.rows[0].address == req.body.address 
                 && !check.rows[0].confirm
@@ -549,18 +549,18 @@ app.post('/admin-login', async(req, res) => {
             data.active = active.rows;
         });
 
-        await pool.query(`SELECT id, index, username, phone, token, category_id, email, address, premium, resume FROM users WHERE confirm = TRUE ORDER BY id DESC;`)
+        await pool.query(`SELECT id, index, username, phone, token, category, email, address, premium, resume FROM users WHERE confirm = TRUE ORDER BY id DESC;`)
         .then(users =>{
             data.users = users.rows;
         });
     
-        await pool.query(`SELECT videos.id, videos.index, videos.name, videos.description, videos.user_id, videos.country, videos.category_id, videos.publish_date, users.token 
+        await pool.query(`SELECT videos.id, videos.index, videos.name, videos.description, videos.user_id, videos.country, videos.category, videos.publish_date, users.token 
             FROM videos INNER JOIN users ON videos.user_id = users.id WHERE videos.confirm = FALSE ORDER BY videos.id DESC;`)
         .then(video =>{
             data.video = video.rows;
         });
     
-        await pool.query(`SELECT videos.id, videos.index, videos.name, videos.description, videos.user_id, videos.country, videos.category_id, videos.publish_date, users.token 
+        await pool.query(`SELECT videos.id, videos.index, videos.name, videos.description, videos.user_id, videos.country, videos.category, videos.publish_date, users.token 
             FROM videos INNER JOIN users ON videos.user_id = users.id WHERE videos.confirm = TRUE ORDER BY videos.id DESC;`)
         .then(videos =>{
             data.videos = videos.rows;
@@ -624,3 +624,10 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+/*
+    git add .
+    git commit -m "restore MedLupa API"
+    git push origin master
+    
+*/
