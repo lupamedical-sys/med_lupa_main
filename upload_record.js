@@ -1,5 +1,6 @@
 const multer = require('multer');
 const pool = require('./connection');
+// const supabase = require('./supabase');
 const fs = require('fs');
 
 const storage = multer.diskStorage({
