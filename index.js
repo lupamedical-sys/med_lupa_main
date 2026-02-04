@@ -612,19 +612,19 @@ app.post('/admin-delete-user', async(req, res) => {
     }
 });
 
-let hostname;
+// let hostname;
 
-for (const name of Object.keys(networkInterfaces)) {
-    for (const net of networkInterfaces[name]) {
-        const familyV4Value = typeof net.family === 'string' ? 'IPv4' : 4;
+// for (const name of Object.keys(networkInterfaces)) {
+//     for (const net of networkInterfaces[name]) {
+//         const familyV4Value = typeof net.family === 'string' ? 'IPv4' : 4;
 
-        if (net.family === familyV4Value && !net.internal) {
-            hostname = net.address;
-            break; // Found the first non-internal IPv4 address, can break the inner loop
-        }
-    }
-    if (hostname) break; // Break the outer loop as well
-}
+//         if (net.family === familyV4Value && !net.internal) {
+//             hostname = net.address;
+//             break; // Found the first non-internal IPv4 address, can break the inner loop
+//         }
+//     }
+//     if (hostname) break; // Break the outer loop as well
+// }
 
 const port = process.env.PORT || 3000;
 
@@ -632,31 +632,14 @@ const port = process.env.PORT || 3000;
 //   console.log(`Server running at http://${hostname}:${port}/`);
 // });
 
-// app.listen(port, hostname, () => {
-//   console.log(`Server is running on port ${port}`);
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
+
+// app.get('/', (req, res) => {
+//     res.send("Connection Successful!");
 // });
-
-
-console.log("--- Network Interfaces ---");
-const nets = os.networkInterfaces();
-for (const name of Object.keys(nets)) {
-    for (const net of nets[name]) {
-        if (net.family === 'IPv4') {
-            console.log(`${name}: ${net.address} ${net.internal ? '(Internal/Local)' : '(POTENTIAL NETWORK IP)'}`);
-        }
-    }
-}
-
-app.get('/', (req, res) => {
-    res.send("Connection Successful!");
-});
-
-// 2. Use 0.0.0.0 to listen on everything
-app.listen(port, '0.0.0.0', () => {
-    console.log("\n--- Server Status ---");
-    console.log(`Server is listening on all interfaces at port ${port}`);
-    console.log(`Try accessing: http://<Any_Potential_IP_Above>:${port}`);
-});
 
 /*
     git add .
