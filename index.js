@@ -226,10 +226,17 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
             data.med_institutions = med_institutions.rows;
         });
 
-        res.json(data);
-    } catch (err) {
-      console.error(err);
-      res.sendStatus(500);
+        res.status(200).json(data);
+
+    } catch (error) {
+        // This logs the actual error to your terminal
+        console.error("SERVER ERROR:", error);
+
+        // This sends the error message back to Flutter so you can see it
+        res.status(500).json({ 
+        error: "Internal Server Error", 
+        details: error.message 
+        });
     }
 });
 
@@ -612,38 +619,8 @@ app.post('/admin-delete-user', async(req, res) => {
     }
 });
 
-// let hostname;
-
-// for (const name of Object.keys(networkInterfaces)) {
-//     for (const net of networkInterfaces[name]) {
-//         const familyV4Value = typeof net.family === 'string' ? 'IPv4' : 4;
-
-//         if (net.family === familyV4Value && !net.internal) {
-//             hostname = net.address;
-//             break; // Found the first non-internal IPv4 address, can break the inner loop
-//         }
-//     }
-//     if (hostname) break; // Break the outer loop as well
-// }
-
 const port = process.env.PORT || 3000;
-
-// app.get('/', (req, res) => {
-//   console.log(`Server running at http://${hostname}:${port}/`);
-// });
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
-
-
-// app.get('/', (req, res) => {
-//     res.send("Connection Successful!");
-// });
-
-/*
-    git add .
-    git commit -m "restore MedLupa API"
-    git push origin master
-    
-*/
