@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
+const path = require('path');
 // const http = require('http');
 require('dotenv').config();
 
@@ -196,7 +197,7 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
             data.countries = countries.rows;
         });
 
-        await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.overview, users.category, videos.name, users.token, videos.description, videos.publish_date, videos.country, videos.category, 
+        await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.overview, videos.name, users.token, videos.description, videos.publish_date, videos.country, videos.category, 
             (SELECT COUNT(id) FROM likes WHERE video_id = videos.id )::int as likes, 
             (SELECT COUNT(id) FROM views WHERE video_id = videos.id )::int as views, 
             (SELECT COUNT(*) FROM likes WHERE video_id = videos.id) + 
@@ -211,7 +212,7 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
             data.med_staff = med_staff.rows;
         });
 
-        await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.overview, users.category, videos.name, users.token, videos.description, videos.publish_date, videos.country, videos.category, 
+        await pool.query(`SELECT videos.id, videos.index, videos.user_id, users.username, users.phone, users.email, users.address, users.overview, videos.name, users.token, videos.description, videos.publish_date, videos.country, videos.category, 
             (SELECT COUNT(id) FROM likes WHERE video_id = videos.id )::int as likes, 
             (SELECT COUNT(id) FROM views WHERE video_id = videos.id )::int as views, 
             (SELECT COUNT(*) FROM likes WHERE video_id = videos.id) + 
@@ -618,6 +619,8 @@ app.post('/admin-delete-user', async(req, res) => {
         res.json(err);
     }
 });
+
+app.use('/data-files', express.static(path.join(__dirname, 'data-files')));
 
 const port = process.env.PORT || 3000;
 
