@@ -16,6 +16,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extend: true }));
 
 const pool = require('./connection');
+const storage = require('./storage');
 // const sendConfirmationCode = require('./send_confirmation_code');
 const generateMd5 = require('./generate_code');
 const generate_overview = require('./generate_overview');
@@ -243,13 +244,13 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
 
 app.post('/add-user', async(req, res) => {
     try {
-        // let sendMessage = false;
-        const check = await pool.query(`SELECT index, username, password, category, email, address, confirm FROM users WHERE phone = '${req.body.phone}'`);
+        let sendMessage = false;
+        const check = await pool.query(`SELECT index, username, password, phone, category, address, confirm FROM users WHERE email = '${req.body.email}'`);
         if (!check.rows.length) {
             res.json({"name": "successful", "code": "0"});
             await pool.query(
-                `INSERT INTO users (index, username, phone, token, password, email, address, category, permission) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`,
-                [req.body.index, req.body.user, req.body.phone, req.body.token, generateMd5(`SET_USER_DATA_${req.body.password}`), req.body.email, req.body.address, req.body.category, parseInt(req.body.index) == 1 ? 3 : 1]
+                `INSERT INTO users (index, username, password, email, token, phone, address, category, permission) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`,
+                [req.body.index, req.body.user, req.body.phone, req.body.token, generateMd5(`SET_USER_DATA_${req.body.password}`), req.body.email, req.body.address, req.body.category, parseInt(req.body.index) == 2 ? 0 : 5]
             );
             sendMessage = true;
         } else {
