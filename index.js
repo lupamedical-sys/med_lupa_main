@@ -247,12 +247,12 @@ app.post('/add-user', async(req, res) => {
         let sendMessage = false;
         const check = await pool.query(`SELECT index, username, password, phone, category, address, confirm FROM users WHERE email = '${req.body.email}'`);
         if (!check.rows.length) {
-            res.json({"name": "successful", "code": "0"});
             await pool.query(
                 `INSERT INTO users (index, username, password, email, token, phone, address, category, permission) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`,
                 [req.body.index, req.body.user, req.body.phone, req.body.token, generateMd5(`SET_USER_DATA_${req.body.password}`), req.body.email, req.body.address, req.body.category, parseInt(req.body.index) == 2 ? 0 : 5]
             );
             sendMessage = true;
+            res.json({"name": "successful", "code": "0"});
         } else {
             if(
                 check.rows[0].index == parseInt(req.body.index)
