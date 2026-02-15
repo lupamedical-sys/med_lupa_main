@@ -245,11 +245,11 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
 app.post('/add-user', async(req, res) => {
     try {
         let sendMessage = false;
-        const check = await pool.query(`SELECT index, username, password, phone, category, address, confirm FROM users WHERE email = '${req.body.email}'`);
+        const check = await pool.query(`SELECT index, username, password, phone, category, country, address, confirm FROM users WHERE email = '${req.body.email}'`);
         if (!check.rows.length) {
             await pool.query(
                 `INSERT INTO users (index, username, password, email, token, phone, address, category, permission) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`,
-                [req.body.index, req.body.username, generateMd5(`SET_USER_DATA_${req.body.password}`), req.body.email, req.body.token, req.body.phone, req.body.address, req.body.category, parseInt(req.body.index) == 2 ? 0 : 5]
+                [req.body.index, req.body.username, generateMd5(`SET_USER_DATA_${req.body.password}`), req.body.email, req.body.token, req.body.phone, req.body.category, req.body.country, req.body.address, parseInt(req.body.index) == 2 ? 0 : 5]
             );
             sendMessage = true;
             res.json({"name": "successful", "code": "0"});
