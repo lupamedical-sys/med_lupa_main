@@ -249,14 +249,14 @@ app.post('/add-user', async(req, res) => {
         if (!check.rows.length) {
             await pool.query(
                 `INSERT INTO users (index, username, password, email, token, phone, address, category, permission) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`,
-                [req.body.index, req.body.username, req.body.phone, req.body.token, generateMd5(`SET_USER_DATA_${req.body.password}`), req.body.email, req.body.address, req.body.category, parseInt(req.body.index) == 2 ? 0 : 5]
+                [req.body.index, req.body.username, generateMd5(`SET_USER_DATA_${req.body.password}`), req.body.email, req.body.token, req.body.phone, req.body.address, req.body.category, parseInt(req.body.index) == 2 ? 0 : 5]
             );
             sendMessage = true;
             res.json({"name": "successful", "code": "0"});
         } else {
             if(
                 check.rows[0].index == parseInt(req.body.index)
-                && check.rows[0].username == req.body.user
+                && check.rows[0].username == req.body.username
                 && check.rows[0].password == generateMd5(`SET_USER_DATA_${req.body.password}`)
                 && check.rows[0].category == req.body.category 
                 && check.rows[0].email == req.body.email 
@@ -305,7 +305,7 @@ app.post('/get-user', async(req, res) => {
 
 app.post('/user-update', async(req, res) => {
     try {
-        await pool.query(`UPDATE users SET username='${req.body.user}', email='${req.body.email}', address='${req.body.address}' WHERE token='${req.body.token}';`)
+        await pool.query(`UPDATE users SET username='${req.body.username}', email='${req.body.email}', address='${req.body.address}' WHERE token='${req.body.token}';`)
         .then(() => {
             res.json({"name": "successful", "code": "0"});
         });
@@ -390,7 +390,7 @@ app.post('/generate-overview', async(req, res) => {
             const json = JSON.parse(generatedContent);
             if (!fs.existsSync(`/data-files/${req.body.path}/`)) fs.mkdirSync(`/data-files/${req.body.path}/`);
             await generate_overview[parseInt(req.body.index)]
-                (req.body.user, req.body.title, req.body.path, req.body.phone, req.body.email, req.body.address, json);
+                (req.body.username, req.body.title, req.body.path, req.body.phone, req.body.email, req.body.address, json);
             await pool.query(`UPDATE users SET overview = TRUE WHERE token='${req.body.path}';`);
     
             let questions = [];
@@ -469,7 +469,7 @@ app.post('/user-follow', async(req, res) => {
     try {
         await pool.query(
             `INSERT INTO follows (follower_id, user_id) VALUES ($1, $2);`,
-            [req.body.follower, req.body.user,]
+            [req.body.follower, req.body.username,]
         ).then(() => {
             res.json({"name": "successful", "code": "0"});
         });
@@ -481,7 +481,7 @@ app.post('/user-follow', async(req, res) => {
 app.post('/user-unfollow', async(req, res) => {
     try {
         await pool.query(`DELETE FROM follows WHERE follower_id = $1 AND user_id = $2`,
-            [req.body.follower, req.body.user,]
+            [req.body.follower, req.body.username,]
         ).then(() => {
             res.json({"name": "successful", "code": "0"});
         });
@@ -494,7 +494,7 @@ app.post('/video-view', async(req, res) => {
     try {
         await pool.query(
             `INSERT INTO views (video_id, user_id) VALUES ($1, $2);`,
-            [req.body.video, req.body.user,]
+            [req.body.video, req.body.username,]
         ).then(() => {
             res.json({"name": "successful", "code": "0"});
         });
@@ -507,7 +507,7 @@ app.post('/video-like', async(req, res) => {
     try {
         await pool.query(
             `INSERT INTO likes (video_id, user_id) VALUES ($1, $2);`,
-            [req.body.video, req.body.user,]
+            [req.body.video, req.body.username,]
         ).then(() => {
             res.json({"name": "successful", "code": "0"});
         });
@@ -519,7 +519,7 @@ app.post('/video-like', async(req, res) => {
 app.post('/video-dislike', async(req, res) => {
     try {
         await pool.query(`DELETE FROM likes WHERE video_id = $1 AND user_id = $2`,
-            [req.body.video, req.body.user,]
+            [req.body.video, req.body.username,]
         ).then(() => {
             res.json({"name": "successful", "code": "0"});
         });
