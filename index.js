@@ -44,11 +44,11 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
         if(types_arr.length || counties_arr.length){
             search_arr_query += ' WHEN '
             if(counties_arr.length){
-                let country_query = ' videos.country && ARRAY['
+                let country_query = ' videos.country = ANY(ARRAY['
                 counties_arr.forEach(country => {
                     country_query += `'${country}',`
                 });
-                country_query = `${country_query.substring(0, country_query.length-1)}] `;
+                country_query = `${country_query.substring(0, country_query.length-1)}]) `;
                 search_arr_query += country_query;
             } 
             if(types_arr.length && counties_arr.length){
@@ -60,7 +60,7 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
                     type_query += `'${type}',`
                 });
                 type_query = type_query.substring(0, type_query.length-1);
-                search_arr_query += ` videos.category && ARRAY[${type_query}] `;
+                search_arr_query += ` videos.category = ANY(ARRAY[${type_query}]) `;
 
                 if(req.params.token != "guest"){
                     let selected_species = types_arr;
@@ -97,13 +97,14 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
 
         if(search.trim() != ''){
             search_query = ` AND ( users.username ILIKE '%${search.trim()}%' OR videos.description ILIKE '%${search.trim()}%' OR 
-            videos.category && (SELECT ARRAY[code] FROM med_categories WHERE EXISTS (SELECT 1 FROM UNNEST(titles) AS title WHERE title ILIKE '%${search.trim().toLowerCase()}%') LIMIT 1)::TEXT[] ) `;
+            videos.category = (SELECT category FROM med_categories WHERE EXISTS (SELECT 1 FROM UNNEST(titles) AS title WHERE title ILIKE '%${search.trim().toLowerCase()}%') LIMIT 1) ) `;
         }
+        
 
         var data = JSON.parse('{}');
 
-        if(req.params.token == "Guest"){
-            data.user = JSON.parse(`{"id": 0, "index": 0, "username": "Guest", "phone": "", "token": "", "category": "", "email": "", "address": "", "permission": 0, "premium": false, "overview": false}`);
+        if(req.params.token == "guest"){
+            data.user = JSON.parse(`{"id": 0, "index": 0, "username": "guest", "phone": "", "token": "", "category": "", "email": "", "address": "", "permission": 0, "premium": false, "overview": false}`);
             data.videos = JSON.parse(`[]`);
             data.followers = JSON.parse(`[]`);
             data.followings = JSON.parse(`[]`);
@@ -231,10 +232,8 @@ app.get('/data/:token/:counties?/:types?/:search?', async (req, res) => {
         res.status(200).json(data);
 
     } catch (error) {
-        // This logs the actual error to your terminal
         console.error("SERVER ERROR:", error);
 
-        // This sends the error message back to Flutter so you can see it
         res.status(500).json({ 
         error: "Internal Server Error", 
         details: error.message 
